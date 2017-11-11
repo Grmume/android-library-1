@@ -82,7 +82,7 @@ public class RegisterAccountDeviceForNotificationsOperation extends RemoteOperat
 
         try {
             // Post Method
-            String uri = Uri.parse(client.getBaseUri() + OCS_ROUTE)
+            String uri = Uri.parse(client.getAdjustedBaseUri() + OCS_ROUTE)
                     .buildUpon()
                     .appendQueryParameter(PUSH_TOKEN_HASH, pushTokenHash)
                     .appendQueryParameter(DEVICE_PUBLIC_KEY, devicePublicKey)

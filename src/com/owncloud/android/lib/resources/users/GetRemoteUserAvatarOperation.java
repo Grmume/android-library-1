@@ -183,7 +183,7 @@ public class GetRemoteUserAvatarOperation extends RemoteOperation {
     }
 
     private String getAvatarUri(OwnCloudClient client, int dimension) {
-        return client.getBaseUri() + NON_OFFICIAL_AVATAR_PATH + client.getCredentials().getUsername() + "/" + dimension;
+        return client.getAdjustedBaseUri() + NON_OFFICIAL_AVATAR_PATH + client.getCredentials().getUsername() + "/" + dimension;
     }
 
     private boolean isSuccess(int status) {

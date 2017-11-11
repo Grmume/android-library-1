@@ -76,9 +76,9 @@ public class GetRemoteActivitiesOperation extends RemoteOperation{
         ArrayList<Object> activities;
         String url;
         if (client.getOwnCloudVersion().compareTo(OwnCloudVersion.nextcloud_12) >= 0) {
-            url = client.getBaseUri() + OCS_ROUTE_V12_AND_UP;
+            url = client.getAdjustedBaseUri() + OCS_ROUTE_V12_AND_UP;
         } else {
-            url = client.getBaseUri() + OCS_ROUTE_PRE_V12;
+            url = client.getAdjustedBaseUri() + OCS_ROUTE_PRE_V12;
         }
         Log_OC.d(TAG, "URL: " + url);
 

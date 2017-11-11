@@ -45,11 +45,19 @@ public class SimpleFactoryManager implements OwnCloudClientManager {
             IOException {
 
 		Log_OC.d(TAG, "getClientFor(OwnCloudAccount ... : ");
-
-		OwnCloudClient client = OwnCloudClientFactory.createOwnCloudClient(
-				account.getBaseUri(), 
+		OwnCloudClient client = null;
+		if(account.useLocalUrl()) {
+			client = OwnCloudClientFactory.createOwnCloudClient(
+					account.getBaseUri(), account.getLocalBaseUri(), account.getLocalWifiSsid(),
+					context.getApplicationContext(),
+					true);
+		} else {
+			client = OwnCloudClientFactory.createOwnCloudClient(
+				account.getBaseUri(),
 				context.getApplicationContext(),
 				true);
+		}
+
 
 		Log_OC.v(TAG, "    new client {" +
 				(account.getName() != null ?

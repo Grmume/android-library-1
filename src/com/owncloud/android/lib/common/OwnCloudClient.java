@@ -25,10 +25,12 @@
 
 package com.owncloud.android.lib.common;
 
+import android.content.Context;
 import android.net.Uri;
 
 import com.owncloud.android.lib.common.OwnCloudCredentialsFactory.OwnCloudAnonymousCredentials;
 import com.owncloud.android.lib.common.accounts.AccountUtils;
+import com.owncloud.android.lib.common.network.NetworkUtils;
 import com.owncloud.android.lib.common.network.RedirectionPath;
 import com.owncloud.android.lib.common.network.WebdavUtils;
 import com.owncloud.android.lib.common.utils.Log_OC;
@@ -66,8 +68,11 @@ public class OwnCloudClient extends HttpClient {
     private boolean mFollowRedirects = true;
     private OwnCloudCredentials mCredentials = null;
     private int mInstanceNumber = 0;
-    
+
+    private Context mContext;
     private Uri mBaseUri;
+    private Uri mLocalBaseUri;
+    private String mWifiSsid;
 
     private OwnCloudVersion mVersion = null;
     
@@ -81,6 +86,8 @@ public class OwnCloudClient extends HttpClient {
         	throw new IllegalArgumentException("Parameter 'baseUri' cannot be NULL");
         }
         mBaseUri = baseUri;
+        mLocalBaseUri = null;
+        mWifiSsid = "";
         
         mInstanceNumber = sIntanceCounter++;
         Log_OC.d(TAG + " #" + mInstanceNumber, "Creating OwnCloudClient");
@@ -99,6 +106,36 @@ public class OwnCloudClient extends HttpClient {
         
         applyProxySettings();
         
+        clearCredentials();
+    }
+
+    public OwnCloudClient(Uri baseUri, Uri localUri, String wifiSsid, HttpConnectionManager connectionMgr) {
+        super(connectionMgr);
+
+        if (baseUri == null) {
+            throw new IllegalArgumentException("Parameter 'baseUri' cannot be NULL");
+        }
+        mBaseUri = baseUri;
+        mLocalBaseUri = localUri;
+        mWifiSsid = wifiSsid;
+
+        mInstanceNumber = sIntanceCounter++;
+        Log_OC.d(TAG + " #" + mInstanceNumber, "Creating OwnCloudClient");
+
+        String userAgent = OwnCloudClientManagerFactory.getUserAgent();
+        getParams().setParameter(HttpMethodParams.USER_AGENT, userAgent);
+        getParams().setParameter(
+                PARAM_PROTOCOL_VERSION,
+                HttpVersion.HTTP_1_1);
+
+        getParams().setCookiePolicy(
+                CookiePolicy.IGNORE_COOKIES);
+        getParams().setParameter(
+                PARAM_SINGLE_COOKIE_HEADER, 			// to avoid problems with some web servers
+                PARAM_SINGLE_COOKIE_HEADER_VALUE);
+
+        applyProxySettings();
+
         clearCredentials();
     }
 
@@ -149,7 +186,7 @@ public class OwnCloudClient extends HttpClient {
      */
     @Deprecated
     public boolean existsFile(String path) throws IOException {
-        HeadMethod head = new HeadMethod(getWebdavUri() + WebdavUtils.encodePath(path));
+        HeadMethod head = new HeadMethod(getAdjustedWebdavUri() + WebdavUtils.encodePath(path));
         try {
             int status = executeMethod(head);
             Log_OC.d(TAG, "HEAD to " + path + " finished with HTTP status " + status +
@@ -326,12 +363,32 @@ public class OwnCloudClient extends HttpClient {
     	}
     }
 
-    public Uri getWebdavUri() {
+    public Uri getAdjustedWebdavUri() {
     	if (mCredentials instanceof OwnCloudBearerCredentials) {
-    		return Uri.parse(mBaseUri + AccountUtils.ODAV_PATH);
+    		return Uri.parse(getAdjustedBaseUri() + AccountUtils.ODAV_PATH);
     	} else {
-    		return Uri.parse(mBaseUri + AccountUtils.WEBDAV_PATH_4_0);
+    		return Uri.parse(getAdjustedBaseUri() + AccountUtils.WEBDAV_PATH_4_0);
     	}
+    }
+
+    public Uri getWebdavUri() {
+        if (mCredentials instanceof OwnCloudBearerCredentials) {
+            return Uri.parse(mBaseUri + AccountUtils.ODAV_PATH);
+        } else {
+            return Uri.parse(mBaseUri + AccountUtils.WEBDAV_PATH_4_0);
+        }
+    }
+
+    public Uri getNewAdjustedWebdavUri(boolean filesUri) {
+        if (mCredentials instanceof OwnCloudBearerCredentials) {
+            return Uri.parse(getAdjustedBaseUri() + AccountUtils.ODAV_PATH);
+        } else {
+            if (filesUri) {
+                return Uri.parse(getAdjustedBaseUri() + AccountUtils.WEBDAV_PATH_4_0);
+            } else {
+                return Uri.parse(getAdjustedBaseUri() + AccountUtils.WEBDAV_PATH_9_0);
+            }
+        }
     }
 
     public Uri getNewWebdavUri(boolean filesUri) {
@@ -360,8 +417,54 @@ public class OwnCloudClient extends HttpClient {
         mBaseUri = uri;
     }
 
+    /**
+     * Sets the root URI to the ownCloud server.
+     *
+     * Use with care.
+     *
+     * @param uri
+     */
+    public void setLocalBaseUri(Uri uri) {
+        if (uri == null) {
+            throw new IllegalArgumentException("URI cannot be NULL");
+        }
+        mLocalBaseUri = uri;
+    }
+
+    /**
+     * Sets the wifi SSID for the local network of the server
+     *
+     * Use with care.
+     *
+     * @param ssid
+     */
+    public void setLocalWifiSsid(String ssid) {
+        if (ssid == null) {
+            throw new IllegalArgumentException("SSID cannot be NULL");
+        }
+        mWifiSsid = ssid;
+    }
+
+
+    /**
+     * Return the Webdav Uri of the server when connected to some random network but the
+     * local Webdav uri when connected to the local wifi.
+     * @return
+     */
+    public Uri getAdjustedBaseUri() {
+        if(NetworkUtils.currentlyConnectedToSsid(mWifiSsid, mContext)) {
+            return mLocalBaseUri;
+        } else {
+            return mBaseUri;
+        }
+    }
+
     public Uri getBaseUri() {
         return mBaseUri;
+    }
+
+    public Uri getLocalBaseUri() {
+        return mLocalBaseUri;
     }
 
     public final OwnCloudCredentials getCredentials() {
@@ -461,5 +564,13 @@ public class OwnCloudClient extends HttpClient {
 
     public OwnCloudVersion getOwnCloudVersion(){
         return mVersion;
+    }
+
+    public void setContext(Context context) {
+        this.mContext = context;
+    }
+
+    public Context getContext() {
+        return mContext;
     }
 }

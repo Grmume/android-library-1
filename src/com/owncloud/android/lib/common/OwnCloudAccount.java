@@ -34,6 +34,7 @@ import android.net.Uri;
 
 import com.owncloud.android.lib.common.accounts.AccountUtils;
 import com.owncloud.android.lib.common.accounts.AccountUtils.AccountNotFoundException;
+import com.owncloud.android.lib.common.network.NetworkUtils;
 
 import java.io.IOException;
 
@@ -44,7 +45,13 @@ import java.io.IOException;
  */
 public class OwnCloudAccount {
 
-    private Uri mBaseUri; 
+    private Uri mBaseUri;
+
+    private Uri mLocalBaseUri;
+
+    private String mLocalWifiSsid;
+
+    private Boolean mUseLocalUrl;
     
     private OwnCloudCredentials mCredentials;
 
@@ -53,6 +60,8 @@ public class OwnCloudAccount {
     private String mSavedAccountName;
 
     private Account mSavedAccount;
+
+    private Context mContext;
 
 
     /**
@@ -68,7 +77,7 @@ public class OwnCloudAccount {
         if (context == null) {
             throw new IllegalArgumentException("Parameter 'context' cannot be null");
         }
-
+        mContext = context;
         mSavedAccount = savedAccount;
         mSavedAccountName = savedAccount.name;
         mCredentials = null;    // load of credentials is delayed
@@ -89,10 +98,11 @@ public class OwnCloudAccount {
      * @param baseUri           URI to the OC server to get access to.
      * @param credentials       Credentials to authenticate in the server. NULL is valid for anonymous credentials.
      */
-    public OwnCloudAccount(Uri baseUri, OwnCloudCredentials credentials) {
+    public OwnCloudAccount(Uri baseUri, OwnCloudCredentials credentials, Context context) {
         if (baseUri == null) {
             throw new IllegalArgumentException("Parameter 'baseUri' cannot be null");
         }
+        mContext = context;
         mSavedAccount = null;
         mSavedAccountName = null;
         mBaseUri = baseUri;
@@ -126,10 +136,29 @@ public class OwnCloudAccount {
 			mCredentials = AccountUtils.getCredentialsForAccount(context, mSavedAccount);
 		}
 	}
+    /**
+     * Return the Base Uri of the server when connected to some random network but the
+     * local base uri when connected to the local wifi.
+     * @return
+     */
+    public Uri getAdjustedBaseUri() {
+        if(NetworkUtils.currentlyConnectedToSsid(mLocalWifiSsid, mContext)) {
+            return mLocalBaseUri;
+        } else {
+            return mBaseUri;
+        }
+    }
 
-    public Uri getBaseUri() {
+    public Uri getBaseUri()
+    {
         return mBaseUri;
     }
+
+    public Uri getLocalBaseUri() { return mLocalBaseUri; }
+
+    public String getLocalWifiSsid() { return mLocalWifiSsid; }
+
+    public Boolean useLocalUrl() { return mUseLocalUrl; }
             
     public OwnCloudCredentials getCredentials() {
         return mCredentials;

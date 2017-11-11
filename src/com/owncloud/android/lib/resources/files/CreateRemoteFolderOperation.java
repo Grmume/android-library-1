@@ -98,7 +98,7 @@ public class CreateRemoteFolderOperation extends RemoteOperation {
         RemoteOperationResult result = null;
         MkColMethod mkcol = null;
         try {
-            mkcol = new MkColMethod(client.getWebdavUri() + WebdavUtils.encodePath(mRemotePath));
+            mkcol = new MkColMethod(client.getAdjustedWebdavUri() + WebdavUtils.encodePath(mRemotePath));
             client.executeMethod(mkcol, READ_TIMEOUT, CONNECTION_TIMEOUT);
             result = new RemoteOperationResult(mkcol.succeeded(), mkcol);
             Log_OC.d(TAG, "Create directory " + mRemotePath + ": " + result.getLogMessage());

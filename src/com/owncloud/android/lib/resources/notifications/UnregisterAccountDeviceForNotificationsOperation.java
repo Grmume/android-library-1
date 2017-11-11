@@ -50,7 +50,7 @@ public class UnregisterAccountDeviceForNotificationsOperation extends RemoteOper
 
         try {
             // Post Method
-            delete = new DeleteMethod(client.getBaseUri() + OCS_ROUTE);
+            delete = new DeleteMethod(client.getAdjustedBaseUri() + OCS_ROUTE);
 
             delete.addRequestHeader(OCS_API_HEADER, OCS_API_HEADER_VALUE);
 

@@ -74,7 +74,7 @@ public class GetRemoteStatusOperation extends RemoteOperation {
     private boolean tryConnection(OwnCloudClient client) {
         boolean retval = false;
         GetMethod get = null;
-        String baseUrlSt = client.getBaseUri().toString();
+        String baseUrlSt = client.getAdjustedBaseUri().toString();
         try {
             get = new GetMethod(baseUrlSt + AccountUtils.STATUS_PATH);
 
@@ -179,16 +179,19 @@ public class GetRemoteStatusOperation extends RemoteOperation {
         if (!isOnline()) {
         	return new RemoteOperationResult(RemoteOperationResult.ResultCode.NO_NETWORK_CONNECTION);
         }
-        String baseUriStr = client.getBaseUri().toString();
+        String baseUriStr = client.getAdjustedBaseUri().toString();
         if (baseUriStr.startsWith(PROTOCOL_HTTP) || baseUriStr.startsWith(PROTOCOL_HTTPS)) {
             tryConnection(client);
             
         } else {
-            client.setBaseUri(Uri.parse(PROTOCOL_HTTPS + baseUriStr));
+            client.setBaseUri(Uri.parse(PROTOCOL_HTTPS + client.getBaseUri()));
+            client.setLocalBaseUri(Uri.parse(PROTOCOL_HTTPS + client.getLocalBaseUri()));
+
             boolean httpsSuccess = tryConnection(client); 
 			if (!httpsSuccess && !mLatestResult.isSslRecoverableException()) {
                 Log_OC.d(TAG, "establishing secure connection failed, trying non secure connection");
-                client.setBaseUri(Uri.parse(PROTOCOL_HTTP + baseUriStr));
+                client.setBaseUri(Uri.parse(PROTOCOL_HTTP + client.getBaseUri()));
+                client.setLocalBaseUri(Uri.parse(PROTOCOL_HTTP + client.getLocalBaseUri()));
                 tryConnection(client);
             }
         }

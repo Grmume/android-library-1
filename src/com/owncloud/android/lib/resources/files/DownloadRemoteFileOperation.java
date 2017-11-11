@@ -101,7 +101,7 @@ public class DownloadRemoteFileOperation extends RemoteOperation {
         IOException, OperationCancelledException {
         int status = -1;
         boolean savedFile = false;
-        mGet = new GetMethod(client.getWebdavUri() + WebdavUtils.encodePath(mRemotePath));
+        mGet = new GetMethod(client.getAdjustedWebdavUri() + WebdavUtils.encodePath(mRemotePath));
         Iterator<OnDatatransferProgressListener> it = null;
 
         FileOutputStream fos = null;

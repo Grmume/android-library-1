@@ -76,13 +76,24 @@ public class OwnCloudClientFactory {
             AccountNotFoundException {
         //Log_OC.d(TAG, "Creating OwnCloudClient associated to " + account.name);
         Uri baseUri = Uri.parse(AccountUtils.getBaseUrlForAccount(appContext, account));
+        Uri localBaseUri = Uri.parse(AccountUtils.getLocalBaseUrlForAccount(appContext, account));
+        String localWifiSsid = AccountUtils.getLocalWifiSsidForAccount(appContext, account);
+        boolean useLocalUri = AccountUtils.useLocalUrlForAccount(appContext, account);
+
         AccountManager am = AccountManager.get(appContext);
         // TODO avoid calling to getUserData here
         boolean isOauth2 =
                 am.getUserData(account, AccountUtils.Constants.KEY_SUPPORTS_OAUTH2) != null;
         boolean isSamlSso =
                 am.getUserData(account, AccountUtils.Constants.KEY_SUPPORTS_SAML_WEB_SSO) != null;
-        OwnCloudClient client = createOwnCloudClient(baseUri, appContext, !isSamlSso);
+
+        OwnCloudClient client = null;
+        if(useLocalUri) {
+            client = createOwnCloudClient(baseUri, localBaseUri, localWifiSsid, appContext, !isSamlSso);
+        } else {
+            client = createOwnCloudClient(baseUri, appContext, !isSamlSso);
+        }
+
 
         String username = AccountUtils.getUsernameForAccount(account);
         if (isOauth2) {
@@ -131,13 +142,23 @@ public class OwnCloudClientFactory {
             throws OperationCanceledException, AuthenticatorException, IOException,
             AccountNotFoundException {
         Uri baseUri = Uri.parse(AccountUtils.getBaseUrlForAccount(appContext, account));
+        Uri localBaseUri = Uri.parse(AccountUtils.getLocalBaseUrlForAccount(appContext, account));
+        String localWifiSsid = AccountUtils.getLocalWifiSsidForAccount(appContext, account);
+        boolean useLocalUri = AccountUtils.useLocalUrlForAccount(appContext, account);
+
         AccountManager am = AccountManager.get(appContext);
         // TODO avoid calling to getUserData here
         boolean isOauth2 =
                 am.getUserData(account, AccountUtils.Constants.KEY_SUPPORTS_OAUTH2) != null;
         boolean isSamlSso =
                 am.getUserData(account, AccountUtils.Constants.KEY_SUPPORTS_SAML_WEB_SSO) != null;
-        OwnCloudClient client = createOwnCloudClient(baseUri, appContext, !isSamlSso);
+        OwnCloudClient client = null;
+
+        if(useLocalUri) {
+            client = createOwnCloudClient(baseUri, localBaseUri, localWifiSsid, appContext, !isSamlSso);
+        } else {
+            client = createOwnCloudClient(baseUri, appContext, !isSamlSso);
+        }
 
         String username = AccountUtils.getUsernameForAccount(account);
         if (isOauth2) {    // TODO avoid a call to getUserData here
@@ -193,6 +214,7 @@ public class OwnCloudClientFactory {
                     username, password, (version != null && version.isPreemptiveAuthenticationPreferred()));
 
             client.setCredentials(credentials);
+            client.setContext(appContext);
         }
         
         // Restore cookies
@@ -204,7 +226,7 @@ public class OwnCloudClientFactory {
     /**
      * Creates a OwnCloudClient to access a URL and sets the desired parameters for ownCloud
      * client connections.
-     * 
+     *
      * @param uri       URL to the ownCloud server; BASE ENTRY POINT, not WebDavPATH
      * @param context   Android context where the OwnCloudClient is being created.
      * @return          A OwnCloudClient object ready to be used
@@ -216,18 +238,48 @@ public class OwnCloudClientFactory {
         }  catch (GeneralSecurityException e) {
             Log_OC.e(TAG, "Advanced SSL Context could not be loaded. Default SSL management in" +
                     " the system will be used for HTTPS connections", e);
-            
+
         } catch (IOException e) {
             Log_OC.e(TAG, "The local server truststore could not be read. Default SSL management" +
                     " in the system will be used for HTTPS connections", e);
         }
-        
+
         OwnCloudClient client = new OwnCloudClient(uri, NetworkUtils.getMultiThreadedConnManager());
         client.setDefaultTimeouts(DEFAULT_DATA_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
         client.setFollowRedirects(followRedirects);
-        
+        client.setContext(context);
+
         return client;
     }
+    /**
+     * Creates a OwnCloudClient to access a URL and sets the desired parameters for ownCloud
+     * client connections.
+     *
+     * @param uri       URL to the ownCloud server; BASE ENTRY POINT, not WebDavPATH
+     * @param context   Android context where the OwnCloudClient is being created.
+     * @return          A OwnCloudClient object ready to be used
+     */
+    public static OwnCloudClient createOwnCloudClient(Uri uri, Uri localUri, String wifiSsid, Context context,
+                                                      boolean followRedirects) {
+        try {
+            NetworkUtils.registerAdvancedSslContext(true, context);
+        }  catch (GeneralSecurityException e) {
+            Log_OC.e(TAG, "Advanced SSL Context could not be loaded. Default SSL management in" +
+                    " the system will be used for HTTPS connections", e);
+
+        } catch (IOException e) {
+            Log_OC.e(TAG, "The local server truststore could not be read. Default SSL management" +
+                    " in the system will be used for HTTPS connections", e);
+        }
+
+        OwnCloudClient client = new OwnCloudClient(uri, localUri, wifiSsid, NetworkUtils.getMultiThreadedConnManager());
+        client.setDefaultTimeouts(DEFAULT_DATA_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
+        client.setFollowRedirects(followRedirects);
+        client.setContext(context);
+
+        return client;
+    }
+
     
 
 }

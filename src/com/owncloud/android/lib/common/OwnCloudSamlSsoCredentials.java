@@ -45,7 +45,7 @@ public class OwnCloudSamlSsoCredentials implements OwnCloudCredentials {
         client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
         client.setFollowRedirects(false);
         
-    	Uri serverUri = client.getBaseUri();
+    	Uri serverUri = client.getAdjustedBaseUri();
         
         String[] cookies = mSessionCookie.split(";");
         if (cookies.length > 0) {

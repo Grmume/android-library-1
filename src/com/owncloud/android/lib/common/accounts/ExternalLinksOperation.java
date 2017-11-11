@@ -64,7 +64,7 @@ public class ExternalLinksOperation extends RemoteOperation {
         RemoteOperationResult result = null;
         int status = -1;
         GetMethod get = null;
-        String ocsUrl = client.getBaseUri() + OCS_ROUTE_EXTERNAL_LINKS;
+        String ocsUrl = client.getAdjustedBaseUri() + OCS_ROUTE_EXTERNAL_LINKS;
 
         try {
             // check capabilities

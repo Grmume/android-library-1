@@ -25,9 +25,7 @@
 package com.owncloud.android.lib.common;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -80,7 +78,7 @@ public class SingleSessionManager implements OwnCloudClientManager {
     	String accountName = account.getName();
     	String sessionName = account.getCredentials() == null ? "" :
             AccountUtils.buildAccountName (
-                account.getBaseUri(),
+                account.getAdjustedBaseUri(),
                 account.getCredentials().getAuthToken()
             )
         ;
@@ -113,10 +111,18 @@ public class SingleSessionManager implements OwnCloudClientManager {
     	
     	if (client == null) {
     		// no client to reuse - create a new one
-    		client = OwnCloudClientFactory.createOwnCloudClient(
-    				account.getBaseUri(), 
-    				context.getApplicationContext(), 
-    				true);	// TODO remove dependency on OwnCloudClientFactory
+
+			if(account.useLocalUrl()) {
+				client = OwnCloudClientFactory.createOwnCloudClient(
+						account.getBaseUri(), account.getLocalBaseUri(), account.getLocalWifiSsid(),
+						context.getApplicationContext(),
+						true);
+			} else {
+				client = OwnCloudClientFactory.createOwnCloudClient(
+						account.getBaseUri(),
+						context.getApplicationContext(),
+						true);
+			}
             client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
             	// enable cookie tracking
             
@@ -227,11 +233,17 @@ public class SingleSessionManager implements OwnCloudClientManager {
 	// this method is just a patch; we need to distinguish accounts in the same host but
 	// different paths; but that requires updating the accountNames for apps upgrading 
 	private void keepUriUpdated(OwnCloudAccount account, OwnCloudClient reusedClient) {
-		Uri recentUri = account.getBaseUri();
-		if (!recentUri.equals(reusedClient.getBaseUri())) {
+		Uri recentUri = account.getAdjustedBaseUri();
+
+		if (!account.getBaseUri().equals(reusedClient.getBaseUri())) {
 			reusedClient.setBaseUri(recentUri);
 		}
-		
+
+		if(account.useLocalUrl()) {
+			if (!account.getLocalBaseUri().equals(reusedClient.getLocalBaseUri())) {
+				reusedClient.setLocalBaseUri(recentUri);
+			}
+		}
 	}
 
 

@@ -119,9 +119,9 @@ public class GetRemoteUserInfoOperation extends RemoteOperation {
         String url = "";
 
         if (!versionWithSelfAPI && !TextUtils.isEmpty(userID)) {
-            url = client.getBaseUri() + OCS_ROUTE_SEARCH + userID;
+            url = client.getAdjustedBaseUri() + OCS_ROUTE_SEARCH + userID;
         } else {
-            url = client.getBaseUri() + OCS_ROUTE_SELF;
+            url = client.getAdjustedBaseUri() + OCS_ROUTE_SELF;
         }
 
 

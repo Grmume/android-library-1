@@ -54,13 +54,13 @@ public class WebDavFileUtils {
 
         if (isReadFolderOperation) {
             we = new WebdavEntry(remoteData.getResponses()[0],
-                    client.getWebdavUri().getPath());
+                    client.getAdjustedWebdavUri().getPath());
             mFolderAndFiles.add(fillOCFile(we));
         } else {
             start = 0;
         }
 
-        String stripString = client.getWebdavUri().getPath();
+        String stripString = client.getAdjustedWebdavUri().getPath();
         if (isSearchOperation && username != null) {
             stripString = stripString.substring(0, stripString.lastIndexOf("/")) + "/dav/files/" + username;
         }

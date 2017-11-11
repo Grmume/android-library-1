@@ -183,7 +183,7 @@ public class UpdateRemoteShareOperation extends RemoteOperation {
         String uriString = null;
 
         try {
-            Uri requestUri = client.getBaseUri();
+            Uri requestUri = client.getAdjustedBaseUri();
             Uri.Builder uriBuilder = requestUri.buildUpon();
             uriBuilder.appendEncodedPath(ShareUtils.SHARING_API_PATH.substring(1));
             uriBuilder.appendEncodedPath(Long.toString(mRemoteId));
@@ -211,7 +211,7 @@ public class UpdateRemoteShareOperation extends RemoteOperation {
                             new ShareXMLParser()
                     );
                     parser.setOwnCloudVersion(client.getOwnCloudVersion());
-                    parser.setServerBaseUri(client.getBaseUri());
+                    parser.setServerBaseUri(client.getAdjustedBaseUri());
                     result = parser.parse(response);
 
                 } else {

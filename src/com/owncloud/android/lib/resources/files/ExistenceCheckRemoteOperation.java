@@ -86,7 +86,7 @@ public class ExistenceCheckRemoteOperation extends RemoteOperation {
         HeadMethod head = null;
         boolean previousFollowRedirects = client.getFollowRedirects();
         try {
-            head = new HeadMethod(client.getWebdavUri() + WebdavUtils.encodePath(mPath));
+            head = new HeadMethod(client.getAdjustedWebdavUri() + WebdavUtils.encodePath(mPath));
             client.setFollowRedirects(false);
             int status = client.executeMethod(head, TIMEOUT, TIMEOUT);
             if (previousFollowRedirects) {
@@ -102,14 +102,14 @@ public class ExistenceCheckRemoteOperation extends RemoteOperation {
                 head.getStatusText(),
                 head.getResponseHeaders()
             );
-            Log_OC.d(TAG, "Existence check for " + client.getWebdavUri() +
+            Log_OC.d(TAG, "Existence check for " + client.getAdjustedWebdavUri() +
                     WebdavUtils.encodePath(mPath) + " targeting for " +
                     (mSuccessIfAbsent ? " absence " : " existence ") +
                     "finished with HTTP status " + status + (!success?"(FAIL)":""));
             
         } catch (Exception e) {
             result = new RemoteOperationResult(e);
-            Log_OC.e(TAG, "Existence check for " + client.getWebdavUri() +
+            Log_OC.e(TAG, "Existence check for " + client.getAdjustedWebdavUri() +
                     WebdavUtils.encodePath(mPath) + " targeting for " +
                     (mSuccessIfAbsent ? " absence " : " existence ") + ": " +
                     result.getLogMessage(), result.getException());
